@@ -190,7 +190,7 @@ function LandingPage({ onEnterCustomer }: { onEnterCustomer: (t: string) => void
 function BannerCarousel({ banners }: { banners: Banner[] }) {
     const [activeIndex, setActiveIndex] = useState(0);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Auto-slide
     useEffect(() => {

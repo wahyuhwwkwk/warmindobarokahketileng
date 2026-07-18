@@ -1,0 +1,105 @@
+{
+  "backupDate": "2026-07-18T15:18:04.567Z",
+  "categories": [
+    {
+      "name": "Makanan"
+    },
+    {
+      "name": "Cemilan"
+    },
+    {
+      "name": "Minuman"
+    }
+  ],
+  "menus": [
+    {
+      "name": "Kopi Susu Gula Aren",
+      "categoryName": "Minuman",
+      "price": "12000",
+      "image": "https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=400&q=80",
+      "description": "Kopi espresso dengan susu segar dan sirup gula aren pilihan.",
+      "hasSpicyLevel": false,
+      "hasTempLevel": true,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Nasi Telur Pontianak",
+      "categoryName": "Makanan",
+      "price": "18000",
+      "image": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=400&q=80",
+      "description": "Nasi hangat disajikan dengan telur ceplok krispi dan siraman kecap bumbu spesial.",
+      "hasSpicyLevel": true,
+      "hasTempLevel": false,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Es Teh Manis",
+      "categoryName": "Minuman",
+      "price": "5000",
+      "image": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80",
+      "description": "Teh melati seduh segar dengan gula asli.",
+      "hasSpicyLevel": false,
+      "hasTempLevel": true,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Mendoan Anget",
+      "categoryName": "Cemilan",
+      "price": "10000",
+      "image": "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=400&q=80",
+      "description": "Tempe mendoan digoreng setengah matang disajikan dengan sambal kecap. (Isi 4)",
+      "hasSpicyLevel": false,
+      "hasTempLevel": false,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Indomie Goreng Spesial",
+      "categoryName": "Makanan",
+      "price": "15000",
+      "image": "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=400&q=80",
+      "description": "Indomie goreng double dengan telur mata sapi, sosis, dan sayuran segar.",
+      "hasSpicyLevel": true,
+      "hasTempLevel": false,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Magelangan Warmindo",
+      "categoryName": "Makanan",
+      "price": "20000",
+      "image": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=400&q=80",
+      "description": "Nasi goreng campur mie dengan suwiran ayam, telur, dan kerupuk.",
+      "hasSpicyLevel": true,
+      "hasTempLevel": false,
+      "isActive": true,
+      "isFavorite": false
+    }
+  ],
+  "banners": [
+    {
+      "title": "Promo Spesial Hari Ini",
+      "subtitle": "Diskon 20% untuk semua menu mie!",
+      "imageUrl": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80",
+      "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "title": "Menu Baru: Kopi Susu",
+      "subtitle": "Coba kopi susu gula aren kami!",
+      "imageUrl": "https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80",
+      "sortOrder": 2,
+      "isActive": true
+    },
+    {
+      "title": "Gratis Mendoan",
+      "subtitle": "Setiap pembelian min. Rp 30.000",
+      "imageUrl": "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=800&q=80",
+      "sortOrder": 3,
+      "isActive": true
+    }
+  ]
+}

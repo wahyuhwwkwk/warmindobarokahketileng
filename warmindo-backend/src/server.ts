@@ -184,6 +184,7 @@ app.post('/api/menus', async (req, res) => {
             include: { category: true, variants: true }
         });
         io.to('admin_room').emit('menu:created', menu);
+        autoBackupMenus(); // Auto-backup after creating menu
         res.json(menu);
     } catch (error) {
         console.error('Error creating menu:', error);
@@ -202,6 +203,7 @@ app.put('/api/menus/:id', async (req, res) => {
             include: { category: true, variants: true }
         });
         io.to('admin_room').emit('menu:updated', menu);
+        autoBackupMenus(); // Auto-backup after updating menu
         res.json(menu);
     } catch (error) {
         console.error('Error updating menu:', error);
@@ -224,6 +226,7 @@ app.put('/api/menus/:id/toggle', async (req, res) => {
         // Emit to ALL clients (admin + customers) for realtime stock update
         io.emit('menu:toggled', menu);
         io.to('admin_room').emit('menu:updated', menu);
+        autoBackupMenus(); // Auto-backup after toggling menu
         console.log(`📦 Menu ${menu.name} → ${menu.isActive ? 'Tersedia' : 'Habis'}`);
         res.json(menu);
     } catch (error) {
@@ -245,6 +248,7 @@ app.put('/api/menus/:id/favorite', async (req, res) => {
             include: { category: true, variants: true }
         });
         io.to('admin_room').emit('menu:updated', menu);
+        autoBackupMenus(); // Auto-backup after toggling favorite
         console.log(`⭐ Menu ${menu.name} → ${menu.isFavorite ? 'Favorit' : 'Normal'}`);
         res.json(menu);
     } catch (error) {
@@ -259,6 +263,7 @@ app.delete('/api/menus/:id', async (req, res) => {
     try {
         await prisma.menu.delete({ where: { id } });
         io.to('admin_room').emit('menu:deleted', { id });
+        autoBackupMenus(); // Auto-backup after deleting menu
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting menu:', error);
@@ -931,6 +936,47 @@ const cleanupExpiredOrders = async () => {
 setInterval(cleanupExpiredOrders, 30 * 1000);
 
 // ==========================================
+// AUTO-BACKUP SYSTEM — Saves menus to JSON file
+// ==========================================
+const BACKUP_FILE = path.join(__dirname, '..', 'backup-menus.json');
+
+const autoBackupMenus = async () => {
+    try {
+        const categories = await prisma.category.findMany();
+        const menus = await prisma.menu.findMany({ include: { category: true } });
+        const banners = await prisma.banner.findMany();
+
+        const backupData = {
+            backupDate: new Date().toISOString(),
+            categories: categories.map(c => ({ name: c.name })),
+            menus: menus.map(m => ({
+                name: m.name,
+                categoryName: m.category.name,
+                price: m.price,
+                image: m.image,
+                description: m.description,
+                hasSpicyLevel: m.hasSpicyLevel,
+                hasTempLevel: m.hasTempLevel,
+                isActive: m.isActive,
+                isFavorite: m.isFavorite,
+            })),
+            banners: banners.map(b => ({
+                title: b.title,
+                subtitle: b.subtitle,
+                imageUrl: b.imageUrl,
+                sortOrder: b.sortOrder,
+                isActive: b.isActive,
+            })),
+        };
+
+        fs.writeFileSync(BACKUP_FILE, JSON.stringify(backupData, null, 2), 'utf-8');
+        console.log(`💾 Auto-backup saved: ${menus.length} menus, ${banners.length} banners`);
+    } catch (err) {
+        console.error('⚠️ Auto-backup failed:', err);
+    }
+};
+
+// ==========================================
 // START SERVER
 // ==========================================
 const PORT = process.env.PORT || 8000;
@@ -946,4 +992,7 @@ server.listen(PORT, '0.0.0.0', () => {
 
     // Run cleanup once on startup
     cleanupExpiredOrders();
+
+    // Run auto-backup once on startup
+    autoBackupMenus();
 });

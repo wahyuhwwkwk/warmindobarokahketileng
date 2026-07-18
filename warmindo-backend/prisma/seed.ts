@@ -1,9 +1,85 @@
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
+const BACKUP_FILE = path.join(__dirname, '..', 'backup-menus.json');
 
 async function main() {
     console.log('🌱 Seeding database...');
+
+    // ==========================================
+    // CHECK FOR BACKUP FILE FIRST
+    // ==========================================
+    if (fs.existsSync(BACKUP_FILE)) {
+        console.log('📦 Backup file found! Restoring from backup...');
+        const backupData = JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf-8'));
+
+        // Restore categories
+        for (const cat of backupData.categories) {
+            await prisma.category.upsert({
+                where: { name: cat.name },
+                update: {},
+                create: { name: cat.name }
+            });
+        }
+        console.log(`✅ ${backupData.categories.length} categories restored`);
+
+        // Restore menus
+        for (const menuData of backupData.menus) {
+            const category = await prisma.category.findUnique({ where: { name: menuData.categoryName } });
+            if (!category) continue;
+
+            const existing = await prisma.menu.findFirst({ where: { name: menuData.name } });
+            if (!existing) {
+                await prisma.menu.create({
+                    data: {
+                        name: menuData.name,
+                        categoryId: category.id,
+                        price: menuData.price,
+                        image: menuData.image || '',
+                        description: menuData.description || '',
+                        hasSpicyLevel: menuData.hasSpicyLevel || false,
+                        hasTempLevel: menuData.hasTempLevel || false,
+                        isActive: menuData.isActive !== undefined ? menuData.isActive : true,
+                        isFavorite: menuData.isFavorite || false,
+                    }
+                });
+                console.log(`  ✅ Menu restored: ${menuData.name}`);
+            } else {
+                console.log(`  ⏭️ Menu already exists: ${menuData.name}`);
+            }
+        }
+
+        // Restore tables
+        for (let i = 1; i <= 20; i++) {
+            await prisma.restaurantTable.upsert({
+                where: { number: i },
+                update: {},
+                create: { number: i }
+            });
+        }
+        console.log('✅ 20 tables restored');
+
+        // Restore banners
+        if (backupData.banners && backupData.banners.length > 0) {
+            const existingBanners = await prisma.banner.count();
+            if (existingBanners === 0) {
+                for (const bannerData of backupData.banners) {
+                    await prisma.banner.create({ data: bannerData });
+                    console.log(`  ✅ Banner restored: ${bannerData.title}`);
+                }
+            }
+        }
+
+        console.log(`\n🎉 Restore from backup completed! (Backup date: ${backupData.backupDate})`);
+        return; // Skip default seed data below
+    }
+
+    // ==========================================
+    // DEFAULT SEED DATA (only if no backup exists)
+    // ==========================================
+    console.log('📝 No backup found, using default seed data...');
 
     // --- Categories ---
     const makanan = await prisma.category.upsert({

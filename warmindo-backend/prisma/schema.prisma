@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+enum Role {
+  ADMIN
+  CASHIER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  WAITING_PAYMENT
+  PAID
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  QRIS
+}
+
+// ==========================================
+// MODELS (TABEL DATABASE)
+// ==========================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model RestaurantTable {
+  id        String   @id @default(uuid())
+  number    Int      @unique
+  qrCodeUrl String?
+  isActive  Boolean  @default(true)
+
+  orders    Order[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+
+  menus     Menu[]
+}
+
+model Menu {
+  id            String   @id @default(uuid())
+  categoryId    String
+  name          String
+  description   String?  @db.Text
+  price         Decimal  @db.Decimal(10, 2)
+  image         String?
+  isActive      Boolean  @default(true)
+  hasSpicyLevel Boolean  @default(false)
+  hasTempLevel  Boolean  @default(false)
+  isFavorite    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category      Category      @relation(fields: [categoryId], references: [id])
+  variants      MenuVariant[]
+  orderItems    OrderItem[]
+}
+
+model MenuVariant {
+  id        String  @id @default(uuid())
+  menuId    String
+  name      String
+
+  priceAdj  Decimal @default(0) @db.Decimal(10, 2)
+
+  menu      Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  orderNumber   String        @unique
+  tableId       String?
+  customerName  String?
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  status        OrderStatus   @default(WAITING_PAYMENT)
+  paymentMethod PaymentMethod
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  table         RestaurantTable? @relation(fields: [tableId], references: [id])
+  items         OrderItem[]
+  payment       Payment?
+  receipt       Receipt?
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  menuId      String
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2)
+  notes       String?
+
+  variantName String?
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menu        Menu     @relation(fields: [menuId], references: [id])
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  amount        Decimal  @db.Decimal(10, 2)
+  method        PaymentMethod
+  status        String
+
+  midtransTrxId String?
+  paidAt        DateTime?
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Receipt {
+  id          String   @id @default(uuid())
+  orderId     String   @unique
+  receiptNo   String   @unique
+  printedAt   DateTime @default(now())
+  printedById String?
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String   @db.Text
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}

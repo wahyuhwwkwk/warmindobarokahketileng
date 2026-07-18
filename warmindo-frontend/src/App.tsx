@@ -86,16 +86,32 @@ const formatRp = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 };
 
-const API_BASE = '/api';
+// Smart API detection: localhost uses Vite proxy, Vercel uses Ngrok URL
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE = isLocalhost ? '/api' : (import.meta.env.VITE_API_URL || '') + '/api';
+
+// Helper fetch that adds ngrok-skip-browser-warning header when on Vercel
+const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
+    const headers: Record<string, string> = {
+        ...(options?.headers as Record<string, string> || {}),
+    };
+    // Only add ngrok header when NOT on localhost (i.e., on Vercel via Ngrok)
+    if (!isLocalhost) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+    }
+    return fetch(url, { ...options, headers });
+};
 
 // --- SOCKET CONNECTION ---
 let socket: Socket | null = null;
+const SOCKET_URL = isLocalhost ? window.location.origin : (import.meta.env.VITE_API_URL || window.location.origin);
 const getSocket = (): Socket => {
     if (!socket) {
-        socket = io(window.location.origin, {
+        socket = io(SOCKET_URL, {
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionDelay: 1000,
+            ...(isLocalhost ? {} : { extraHeaders: { 'ngrok-skip-browser-warning': 'true' } }),
         });
     }
     return socket;
@@ -304,7 +320,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
     useEffect(() => {
         const fetchMenus = async () => {
             try {
-                const res = await fetch(`${API_BASE}/menus`);
+                const res = await apiFetch(`${API_BASE}/menus`);
                 const data = await res.json();
                 setMenus(data);
             } catch (err) {
@@ -320,7 +336,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
     useEffect(() => {
         const fetchBanners = async () => {
             try {
-                const res = await fetch(`${API_BASE}/banners`);
+                const res = await apiFetch(`${API_BASE}/banners`);
                 const data = await res.json();
                 setBanners(data);
             } catch (err) {
@@ -420,7 +436,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
     const handleCheckout = async (paymentMethod: PaymentMethod, customerName: string) => {
         setOrderLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/orders`, {
+            const res = await apiFetch(`${API_BASE}/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1132,7 +1148,7 @@ function OrderTracker({ order, tableNumber, onOrderUpdate }: { order: Order; tab
                         onClick={async () => {
                             setSimulateLoading(true);
                             try {
-                                const res = await fetch(`${API_BASE}/payments/simulate/${order.id}`, { method: 'POST' });
+                                const res = await apiFetch(`${API_BASE}/payments/simulate/${order.id}`, { method: 'POST' });
                                 const updated = await res.json();
                                 if (updated.status) onOrderUpdate(updated);
                             } catch (e) {
@@ -1155,7 +1171,7 @@ function OrderTracker({ order, tableNumber, onOrderUpdate }: { order: Order; tab
                     <button
                         onClick={async () => {
                             try {
-                                const res = await fetch(`${API_BASE}/payments/verify/${order.id}`, { method: 'POST' });
+                                const res = await apiFetch(`${API_BASE}/payments/verify/${order.id}`, { method: 'POST' });
                                 const updated = await res.json();
                                 if (updated.status) onOrderUpdate(updated);
                             } catch (e) {

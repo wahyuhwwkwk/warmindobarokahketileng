@@ -33,12 +33,26 @@ class AppConfig {
   /// Base API URL
   static String get apiBaseUrl {
     if (kIsWeb) return 'http://localhost:$serverPort/api';
+    
+    // Jika input adalah domain cloud (seperti Railway, ngrok, dsb)
+    if (_serverIp.contains('.') && !RegExp(r'^[0-9.]+$').hasMatch(_serverIp)) {
+      final cleanIp = _serverIp.replaceAll('https://', '').replaceAll('http://', '');
+      return 'https://$cleanIp/api';
+    }
+    
+    // Jika input adalah IP lokal biasa (seperti 192.168.x.x)
     return 'http://$_serverIp:$serverPort/api';
   }
 
   /// Socket.IO URL
   static String get socketUrl {
     if (kIsWeb) return 'http://localhost:$serverPort';
+    
+    if (_serverIp.contains('.') && !RegExp(r'^[0-9.]+$').hasMatch(_serverIp)) {
+      final cleanIp = _serverIp.replaceAll('https://', '').replaceAll('http://', '');
+      return 'https://$cleanIp';
+    }
+    
     return 'http://$_serverIp:$serverPort';
   }
 }

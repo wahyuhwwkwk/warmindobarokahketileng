@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../config.dart';
@@ -37,14 +37,14 @@ class _BannerScreenState extends State<BannerScreen> {
     }
   }
 
-  Future<void> _createBannerWithFile(String title, String subtitle, File imageFile) async {
+  Future<void> _createBannerWithFile(String title, String subtitle, Uint8List imageBytes, String fileName) async {
     try {
       final uri = Uri.parse('${AppConfig.apiBaseUrl}/banners');
       final request = http.MultipartRequest('POST', uri);
       request.fields['title'] = title;
       request.fields['subtitle'] = subtitle;
       request.fields['sortOrder'] = _banners.length.toString();
-      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+      request.files.add(http.MultipartFile.fromBytes('image', imageBytes, filename: fileName));
 
       final response = await request.send();
       if (response.statusCode == 200) {
@@ -130,7 +130,7 @@ class _BannerScreenState extends State<BannerScreen> {
   void _showAddDialog() {
     final titleCtrl = TextEditingController();
     final subtitleCtrl = TextEditingController();
-    File? selectedImage;
+    Uint8List? selectedImageBytes;
     String? selectedImageName;
 
     showDialog(
@@ -167,8 +167,9 @@ class _BannerScreenState extends State<BannerScreen> {
                       imageQuality: 85,
                     );
                     if (picked != null) {
+                      final bytes = await picked.readAsBytes();
                       setDialogState(() {
-                        selectedImage = File(picked.path);
+                        selectedImageBytes = bytes;
                         selectedImageName = picked.name;
                       });
                     }
@@ -180,18 +181,18 @@ class _BannerScreenState extends State<BannerScreen> {
                       color: const Color(0xFFFFF7ED),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: selectedImage != null ? const Color(0xFFF97316) : const Color(0xFFFED7AA),
+                        color: selectedImageBytes != null ? const Color(0xFFF97316) : const Color(0xFFFED7AA),
                         width: 2,
                         strokeAlign: BorderSide.strokeAlignInside,
                       ),
                     ),
-                    child: selectedImage != null
+                    child: selectedImageBytes != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(14),
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                Image.file(selectedImage!, fit: BoxFit.cover),
+                                Image.memory(selectedImageBytes!, fit: BoxFit.cover),
                                 Positioned(
                                   bottom: 0,
                                   left: 0,
@@ -272,9 +273,9 @@ class _BannerScreenState extends State<BannerScreen> {
             ),
             FilledButton.icon(
               onPressed: () {
-                if (titleCtrl.text.isNotEmpty && selectedImage != null) {
+                if (titleCtrl.text.isNotEmpty && selectedImageBytes != null) {
                   Navigator.pop(ctx);
-                  _createBannerWithFile(titleCtrl.text, subtitleCtrl.text, selectedImage!);
+                  _createBannerWithFile(titleCtrl.text, subtitleCtrl.text, selectedImageBytes!, selectedImageName ?? 'banner.jpg');
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

@@ -1,5 +1,5 @@
 {
-  "backupDate": "2026-07-25T17:35:30.105Z",
+  "backupDate": "2026-07-25T17:55:12.130Z",
   "categories": [
     {
       "name": "Makanan"
@@ -12,6 +12,17 @@
     }
   ],
   "menus": [
+    {
+      "name": "Nasi Ayam Crispy",
+      "categoryName": "Makanan",
+      "price": "12000",
+      "image": "/uploads/menu_1785002112042.jpeg",
+      "description": "Nasi putih hangat disajikan dengan potongan ayam goreng berselimut tepung renyah, gurih, dan lezat.",
+      "hasSpicyLevel": true,
+      "hasTempLevel": false,
+      "isActive": true,
+      "isFavorite": false
+    },
     {
       "name": "Kopi Susu Gula Aren",
       "categoryName": "Minuman",

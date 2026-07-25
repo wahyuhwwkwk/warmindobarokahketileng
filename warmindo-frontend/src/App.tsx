@@ -112,6 +112,40 @@ const resolveImageUrl = (url: string): string => {
     return `${BACKEND_BASE}${url}`;
 };
 
+// Image component that bypasses Ngrok warning page by fetching with headers
+const ProxyImage = ({ src, alt, className, loading, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+    const [imgSrc, setImgSrc] = useState<string>(src || '');
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+        if (!src) return;
+        // On localhost or external URLs (non-ngrok), just use src directly
+        if (isLocalhost || !src.includes('ngrok')) {
+            setImgSrc(src);
+            return;
+        }
+        // On Vercel: fetch image with ngrok header, then create blob URL
+        let cancelled = false;
+        fetch(src, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed');
+                return r.blob();
+            })
+            .then(blob => {
+                if (!cancelled) setImgSrc(URL.createObjectURL(blob));
+            })
+            .catch(() => { if (!cancelled) setFailed(true); });
+        return () => { cancelled = true; };
+    }, [src]);
+
+    if (failed || !imgSrc) {
+        return <div className={className} style={{ backgroundColor: '#f8f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Utensils className="w-8 h-8 text-warmindo-brown/30" />
+        </div>;
+    }
+    return <img src={imgSrc} alt={alt} className={className} loading={loading} {...props} />;
+};
+
 // --- SOCKET CONNECTION ---
 let socket: Socket | null = null;
 const SOCKET_URL = isLocalhost ? window.location.origin : (import.meta.env.VITE_API_URL || window.location.origin);
@@ -268,7 +302,7 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
                         className="w-full flex-shrink-0 snap-start"
                     >
                         <div className="relative h-40 rounded-2xl overflow-hidden mx-0">
-                            <img
+                            <ProxyImage
                                 src={resolveImageUrl(banner.imageUrl)}
                                 alt={banner.title}
                                 className="w-full h-full object-cover"
@@ -600,7 +634,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
                                             style={{ animationDelay: `${index * 60}ms` }}
                                         >
                                             <div className="h-24 bg-warmindo-50 relative overflow-hidden">
-                                                <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
+                                                <ProxyImage src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
                                                 {index < 2 && (
                                                     <span className="absolute top-2 left-2 bg-warmindo-red text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                                         Best Seller
@@ -676,7 +710,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
                                     >
                                         {/* Image */}
                                         <div className="w-28 h-28 bg-warmindo-50 relative overflow-hidden flex-shrink-0">
-                                            <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
+                                            <ProxyImage src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
                                             {!menu.isActive && (
                                                 <div className="absolute inset-0 bg-warmindo-brown/50 flex items-center justify-center backdrop-blur-[1px]">
                                                     <span className="bg-warmindo-red text-white text-[9px] font-extrabold px-2 py-1 rounded-full shadow-lg tracking-wide">
@@ -791,7 +825,7 @@ function MenuDetailModal({ menu, onClose, onAdd }: { menu: Menu; onClose: () => 
             <div className="bg-white w-full max-w-lg rounded-t-3xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up" onClick={e => e.stopPropagation()}>
                 {/* Image */}
                 <div className="relative h-44 bg-warmindo-50 shrink-0">
-                    <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" />
+                    <ProxyImage src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                     <button onClick={onClose} className="absolute top-3 right-3 bg-white/80 backdrop-blur-md p-2 rounded-full text-warmindo-brown active:scale-90 transition-all">
                         <X className="w-5 h-5" />
@@ -935,7 +969,7 @@ function CartPage({ cart, total, onUpdate, onRemove, onBack, onCheckout, isLoadi
                 {cart.map((item: CartItem) => (
                     <div key={item.cartId} className="flex gap-3 p-4">
                         <div className="w-14 h-14 rounded-xl bg-warmindo-50 overflow-hidden shrink-0">
-                            <img src={resolveImageUrl(item.image)} alt="" className="w-full h-full object-cover" />
+                            <ProxyImage src={resolveImageUrl(item.image)} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-grow min-w-0">
                             <h4 className="font-bold text-sm leading-tight truncate text-warmindo-brown">{item.name}</h4>

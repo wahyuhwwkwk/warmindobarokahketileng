@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -625,7 +626,8 @@ class _MenuFormModalState extends State<MenuFormModal> {
   String? _selectedCategoryId;
   bool _hasSpicyLevel = false;
   bool _hasTempLevel = false;
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
   bool _isUploading = false;
   String _existingImageUrl = '';
   final ImagePicker _picker = ImagePicker();
@@ -652,7 +654,11 @@ class _MenuFormModalState extends State<MenuFormModal> {
         imageQuality: 85,
       );
       if (picked != null) {
-        setState(() => _selectedImage = File(picked.path));
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImageName = picked.name;
+        });
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
@@ -815,24 +821,24 @@ class _MenuFormModalState extends State<MenuFormModal> {
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: _selectedImage != null || _existingImageUrl.isNotEmpty
+                          color: _selectedImageBytes != null || _existingImageUrl.isNotEmpty
                               ? const Color(0xFFF97316)
                               : Colors.grey.shade200,
-                          width: _selectedImage != null ? 2 : 1,
+                          width: _selectedImageBytes != null ? 2 : 1,
                         ),
                       ),
-                      child: _selectedImage != null
+                      child: _selectedImageBytes != null
                           // Show newly picked image
                           ? Stack(
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(13),
-                                  child: Image.file(_selectedImage!, width: double.infinity, height: 150, fit: BoxFit.cover),
+                                  child: Image.memory(_selectedImageBytes!, width: double.infinity, height: 150, fit: BoxFit.cover),
                                 ),
                                 Positioned(
                                   top: 8, right: 8,
                                   child: GestureDetector(
-                                    onTap: () => setState(() => _selectedImage = null),
+                                    onTap: () => setState(() { _selectedImageBytes = null; _selectedImageName = null; }),
                                     child: Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
@@ -930,10 +936,10 @@ class _MenuFormModalState extends State<MenuFormModal> {
                           String imageUrl = _existingImageUrl;
 
                           // Upload new image if selected
-                          if (_selectedImage != null) {
+                          if (_selectedImageBytes != null) {
                             setState(() => _isUploading = true);
                             try {
-                              imageUrl = await ApiService.uploadMenuImage(_selectedImage!.path);
+                              imageUrl = await ApiService.uploadMenuImage(_selectedImageBytes!, _selectedImageName ?? 'menu.jpg');
                             } catch (e) {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

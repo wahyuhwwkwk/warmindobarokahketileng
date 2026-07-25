@@ -62,10 +62,10 @@ class ApiService {
   }
 
   /// Upload menu image file to backend, returns the image URL path
-  static Future<String> uploadMenuImage(String filePath) async {
+  static Future<String> uploadMenuImage(List<int> bytes, String filename) async {
     final uri = Uri.parse('${_getBaseUrl()}/menus/upload-image');
     final request = http.MultipartRequest('POST', uri);
-    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+    request.files.add(http.MultipartFile.fromBytes('image', bytes, filename: filename));
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
     if (response.statusCode == 200) {

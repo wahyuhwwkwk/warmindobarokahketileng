@@ -9,6 +9,13 @@ import '../config.dart';
 
 final _rpFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
+/// Resolve image URL: if it's a relative path like /uploads/..., prepend backend base URL
+String _resolveMenuImageUrl(String url) {
+  if (url.isEmpty) return '';
+  if (url.startsWith('http')) return url;
+  return '${AppConfig.socketUrl}$url';
+}
+
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
 
@@ -271,7 +278,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       child: Stack(
                         children: [
                           menu.image.isNotEmpty
-                              ? Image.network(menu.image, width: 60, height: 60, fit: BoxFit.cover,
+                              ? Image.network(_resolveMenuImageUrl(menu.image), width: 60, height: 60, fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => _imagePlaceholder(60))
                               : _imagePlaceholder(60),
                           if (!menu.isActive)
@@ -502,7 +509,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: menu.image.isNotEmpty
-                            ? Image.network(menu.image, width: 44, height: 44, fit: BoxFit.cover,
+                            ? Image.network(_resolveMenuImageUrl(menu.image), width: 44, height: 44, fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
                                   width: 44, height: 44,
                                   color: Colors.grey.shade200,

@@ -1,5 +1,5 @@
 {
-  "backupDate": "2026-07-25T17:55:12.130Z",
+  "backupDate": "2026-07-25T18:04:15.891Z",
   "categories": [
     {
       "name": "Makanan"
@@ -31,6 +31,17 @@
       "description": "Kopi espresso dengan susu segar dan sirup gula aren pilihan.",
       "hasSpicyLevel": false,
       "hasTempLevel": true,
+      "isActive": true,
+      "isFavorite": false
+    },
+    {
+      "name": "Nasi Ayam Bali Crispy",
+      "categoryName": "Makanan",
+      "price": "13000",
+      "image": "/uploads/menu_1785002655847.jpeg",
+      "description": "Ayam crispy renyah yang dilumuri bumbu Bali bercita rasa pedas, manis, dan kaya rempah segar.",
+      "hasSpicyLevel": true,
+      "hasTempLevel": false,
       "isActive": true,
       "isFavorite": false
     },

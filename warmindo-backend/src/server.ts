@@ -167,6 +167,34 @@ app.get('/api/menus/all', async (_req, res) => {
     }
 });
 
+// Multer config for menu image upload
+const menuStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `menu_${Date.now()}${ext}`);
+    }
+});
+const uploadMenuImage = multer({
+    storage: menuStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    fileFilter: (_req, file, cb) => {
+        const allowed = /\.(jpg|jpeg|png|gif|webp)$/i;
+        if (allowed.test(path.extname(file.originalname))) cb(null, true);
+        else cb(new Error('Hanya file gambar yang diperbolehkan'));
+    }
+});
+
+// POST upload menu image (Admin) — returns the image URL
+app.post('/api/menus/upload-image', uploadMenuImage.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'Tidak ada file yang diupload' });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    console.log(`📸 Menu image uploaded: ${imageUrl}`);
+    res.json({ imageUrl });
+});
+
 // POST create new menu (Admin)
 app.post('/api/menus', async (req, res) => {
     const { name, categoryId, price, description, image, hasSpicyLevel, hasTempLevel } = req.body;

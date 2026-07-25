@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/menu_model.dart';
 import '../services/api_service.dart';
+import '../config.dart';
 
 final _rpFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
@@ -618,11 +621,14 @@ class MenuFormModal extends StatefulWidget {
 class _MenuFormModalState extends State<MenuFormModal> {
   late TextEditingController _nameCtrl;
   late TextEditingController _priceCtrl;
-  late TextEditingController _imageCtrl;
   late TextEditingController _descCtrl;
   String? _selectedCategoryId;
   bool _hasSpicyLevel = false;
   bool _hasTempLevel = false;
+  File? _selectedImage;
+  bool _isUploading = false;
+  String _existingImageUrl = '';
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -630,18 +636,74 @@ class _MenuFormModalState extends State<MenuFormModal> {
     final d = widget.initialData;
     _nameCtrl = TextEditingController(text: d?.name ?? '');
     _priceCtrl = TextEditingController(text: d != null ? d.price.toInt().toString() : '');
-    _imageCtrl = TextEditingController(text: d?.image ?? '');
     _descCtrl = TextEditingController(text: d?.description ?? '');
     _selectedCategoryId = d?.categoryId ?? (widget.categories.isNotEmpty ? widget.categories.first.id : null);
     _hasSpicyLevel = d?.hasSpicyLevel ?? false;
     _hasTempLevel = d?.hasTempLevel ?? false;
+    _existingImageUrl = d?.image ?? '';
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() => _selectedImage = File(picked.path));
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFFF97316)),
+              ),
+              title: const Text('Ambil Foto', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('Gunakan kamera HP'),
+              onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.camera); },
+            ),
+            const SizedBox(height: 4),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.photo_library_rounded, color: Color(0xFFF97316)),
+              ),
+              title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('Ambil dari galeri foto'),
+              onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.gallery); },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _priceCtrl.dispose();
-    _imageCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
   }
@@ -742,8 +804,91 @@ class _MenuFormModalState extends State<MenuFormModal> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  _label('URL Gambar (Opsional)'),
-                  _textField(_imageCtrl, 'https://...'),
+                  _label('Gambar Menu'),
+                  // Image picker area
+                  GestureDetector(
+                    onTap: _showImagePickerOptions,
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _selectedImage != null || _existingImageUrl.isNotEmpty
+                              ? const Color(0xFFF97316)
+                              : Colors.grey.shade200,
+                          width: _selectedImage != null ? 2 : 1,
+                        ),
+                      ),
+                      child: _selectedImage != null
+                          // Show newly picked image
+                          ? Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(13),
+                                  child: Image.file(_selectedImage!, width: double.infinity, height: 150, fit: BoxFit.cover),
+                                ),
+                                Positioned(
+                                  top: 8, right: 8,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedImage = null),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                      child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : _existingImageUrl.isNotEmpty
+                              // Show existing image (when editing)
+                              ? Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(13),
+                                      child: Image.network(
+                                        _existingImageUrl.startsWith('http') ? _existingImageUrl : '${AppConfig.socketUrl}${_existingImageUrl}',
+                                        width: double.infinity, height: 150, fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey.shade400),
+                                              const SizedBox(height: 8),
+                                              Text('Gambar tidak tersedia', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 8, right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Text('Tap untuk ganti', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              // Show placeholder
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_rounded, size: 36, color: Colors.grey.shade400),
+                                    const SizedBox(height: 8),
+                                    Text('Tap untuk pilih gambar', style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
+                                    const SizedBox(height: 4),
+                                    Text('Kamera atau Galeri', style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                                  ],
+                                ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   _label('Deskripsi'),
                   TextField(
@@ -779,14 +924,39 @@ class _MenuFormModalState extends State<MenuFormModal> {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final saveButton = ElevatedButton(
-                        onPressed: () {
+                        onPressed: _isUploading ? null : () async {
                           if (_nameCtrl.text.isEmpty || _priceCtrl.text.isEmpty || _selectedCategoryId == null) return;
+
+                          String imageUrl = _existingImageUrl;
+
+                          // Upload new image if selected
+                          if (_selectedImage != null) {
+                            setState(() => _isUploading = true);
+                            try {
+                              imageUrl = await ApiService.uploadMenuImage(_selectedImage!.path);
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Gagal upload gambar'),
+                                    backgroundColor: Colors.red,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                );
+                                setState(() => _isUploading = false);
+                              }
+                              return;
+                            }
+                            if (mounted) setState(() => _isUploading = false);
+                          }
+
                           widget.onSave({
                             'name': _nameCtrl.text,
                             'categoryId': _selectedCategoryId,
                             'price': double.tryParse(_priceCtrl.text) ?? 0,
                             'description': _descCtrl.text,
-                            'image': _imageCtrl.text,
+                            'image': imageUrl,
                             'hasSpicyLevel': _hasSpicyLevel,
                             'hasTempLevel': _hasTempLevel,
                           });
@@ -798,7 +968,16 @@ class _MenuFormModalState extends State<MenuFormModal> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
-                        child: const Text('Simpan Menu', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                        child: _isUploading
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                                  SizedBox(width: 10),
+                                  Text('Mengupload gambar...', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                                ],
+                              )
+                            : const Text('Simpan Menu', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                       );
 
                       if (constraints.maxWidth < 300) {

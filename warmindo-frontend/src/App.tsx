@@ -102,6 +102,16 @@ const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
     return fetch(url, { ...options, headers });
 };
 
+// Helper to resolve image URLs: uploaded images (/uploads/...) need backend base URL on Vercel
+const BACKEND_BASE = isLocalhost ? '' : (import.meta.env.VITE_API_URL || '');
+const resolveImageUrl = (url: string): string => {
+    if (!url) return '';
+    // If it's already a full URL (http/https), return as-is
+    if (url.startsWith('http')) return url;
+    // If it's a local path like /uploads/menu_123.jpg, prepend backend base
+    return `${BACKEND_BASE}${url}`;
+};
+
 // --- SOCKET CONNECTION ---
 let socket: Socket | null = null;
 const SOCKET_URL = isLocalhost ? window.location.origin : (import.meta.env.VITE_API_URL || window.location.origin);
@@ -259,7 +269,7 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
                     >
                         <div className="relative h-40 rounded-2xl overflow-hidden mx-0">
                             <img
-                                src={banner.imageUrl}
+                                src={resolveImageUrl(banner.imageUrl)}
                                 alt={banner.title}
                                 className="w-full h-full object-cover"
                                 loading={idx === 0 ? 'eager' : 'lazy'}
@@ -590,7 +600,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
                                             style={{ animationDelay: `${index * 60}ms` }}
                                         >
                                             <div className="h-24 bg-warmindo-50 relative overflow-hidden">
-                                                <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
+                                                <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
                                                 {index < 2 && (
                                                     <span className="absolute top-2 left-2 bg-warmindo-red text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                                         Best Seller
@@ -666,7 +676,7 @@ function CustomerPortal({ tableNumber, onBackToHome }: { tableNumber: string; on
                                     >
                                         {/* Image */}
                                         <div className="w-28 h-28 bg-warmindo-50 relative overflow-hidden flex-shrink-0">
-                                            <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
+                                            <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" loading="lazy" />
                                             {!menu.isActive && (
                                                 <div className="absolute inset-0 bg-warmindo-brown/50 flex items-center justify-center backdrop-blur-[1px]">
                                                     <span className="bg-warmindo-red text-white text-[9px] font-extrabold px-2 py-1 rounded-full shadow-lg tracking-wide">
@@ -781,7 +791,7 @@ function MenuDetailModal({ menu, onClose, onAdd }: { menu: Menu; onClose: () => 
             <div className="bg-white w-full max-w-lg rounded-t-3xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up" onClick={e => e.stopPropagation()}>
                 {/* Image */}
                 <div className="relative h-44 bg-warmindo-50 shrink-0">
-                    <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(menu.image)} alt={menu.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                     <button onClick={onClose} className="absolute top-3 right-3 bg-white/80 backdrop-blur-md p-2 rounded-full text-warmindo-brown active:scale-90 transition-all">
                         <X className="w-5 h-5" />
@@ -925,7 +935,7 @@ function CartPage({ cart, total, onUpdate, onRemove, onBack, onCheckout, isLoadi
                 {cart.map((item: CartItem) => (
                     <div key={item.cartId} className="flex gap-3 p-4">
                         <div className="w-14 h-14 rounded-xl bg-warmindo-50 overflow-hidden shrink-0">
-                            <img src={item.image} alt="" className="w-full h-full object-cover" />
+                            <img src={resolveImageUrl(item.image)} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-grow min-w-0">
                             <h4 className="font-bold text-sm leading-tight truncate text-warmindo-brown">{item.name}</h4>

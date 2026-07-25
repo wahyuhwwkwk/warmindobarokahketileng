@@ -61,6 +61,20 @@ class ApiService {
     throw Exception('Failed to create menu');
   }
 
+  /// Upload menu image file to backend, returns the image URL path
+  static Future<String> uploadMenuImage(String filePath) async {
+    final uri = Uri.parse('${_getBaseUrl()}/menus/upload-image');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['imageUrl'] as String;
+    }
+    throw Exception('Failed to upload menu image');
+  }
+
   static Future<MenuModel> updateMenu(String id, Map<String, dynamic> menuData) async {
     final response = await http.put(
       Uri.parse('${_getBaseUrl()}/menus/$id'),

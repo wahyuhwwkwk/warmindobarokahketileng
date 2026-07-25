@@ -4,11 +4,13 @@
     "description": "API dan Realtime Server untuk Warmindo Barokah",
     "main": "src/server.ts",
     "scripts": {
-        "start": "ts-node src/server.ts",
+        "build": "npx prisma generate && npx prisma db push && npx tsc",
+        "start": "node dist/server.js",
         "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
         "db:push": "prisma db push",
         "db:seed": "ts-node prisma/seed.ts",
-        "db:studio": "prisma studio"
+        "db:studio": "prisma studio",
+        "postinstall": "npx prisma generate"
     },
     "prisma": {
         "seed": "ts-node prisma/seed.ts"

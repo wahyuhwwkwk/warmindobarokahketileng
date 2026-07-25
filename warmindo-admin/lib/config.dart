@@ -42,4 +42,3 @@ class AppConfig {
     return 'http://$_serverIp:$serverPort';
   }
 }
-

@@ -23,6 +23,7 @@ const snap = new midtransClient.Snap({
 });
 
 // Also create Core API client (for status checks and verification)
+// @ts-ignore - midtrans-client type definitions incomplete
 const coreApi = new midtransClient.CoreApi({
     isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
     serverKey: process.env.MIDTRANS_SERVER_KEY || '',
@@ -1008,6 +1009,7 @@ const autoBackupMenus = async () => {
 // START SERVER
 // ==========================================
 const PORT = process.env.PORT || 8000;
+// @ts-ignore - PORT is valid as string for server.listen
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 ====================================`);
     console.log(`   Warmindo Backend API`);

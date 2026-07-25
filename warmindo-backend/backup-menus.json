@@ -1,5 +1,5 @@
 {
-  "backupDate": "2026-07-25T19:15:18.359Z",
+  "backupDate": "2026-07-25T20:52:24.912Z",
   "categories": [
     {
       "name": "Makanan"
@@ -499,10 +499,10 @@
   ],
   "banners": [
     {
-      "title": "Promo Spesial Hari Ini",
-      "subtitle": "Diskon 20% untuk semua menu mie!",
-      "imageUrl": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80",
-      "sortOrder": 1,
+      "title": "Yuk Nongkrong",
+      "subtitle": null,
+      "imageUrl": "/uploads/banner_1785007229027.jpeg",
+      "sortOrder": 3,
       "isActive": true
     },
     {
@@ -510,7 +510,7 @@
       "subtitle": "Coba kopi susu gula aren kami!",
       "imageUrl": "https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80",
       "sortOrder": 2,
-      "isActive": true
+      "isActive": false
     },
     {
       "title": "Gratis Mendoan",
